@@ -1,0 +1,15 @@
+\ProvidesPackage{lualiterate}
+
+\directlua{
+  lualiterate = require "lualiterate"
+}
+
+\newcommand\lualiterateinput[1]{%
+  \directlua{
+local chunks = lualiterate.load_file("\luatexluaescapestring{#1}")
+chunks:list_sources()
+  }
+}
+
+
+\endinput
