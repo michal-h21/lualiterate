@@ -28,21 +28,49 @@ end
 --  hardwired here
 DocClass.listSources = function(self)
   local print_chunk = function(ch)
-    tex.print(table.concat(ch),"\n")
-    print(table.concat(ch),"\n")
+    tex.print(table.concat(ch),"")
+    -- print(table.concat(ch),"\n")
   end
   local print_code = function(ch)
-    tex.print("\n\n\\noindent")
+    --tex.print("\n\n\\noindent")
     for _, line in ipairs(ch) do
-      tex.print("\\verb|" .. line .."|\\\\")
+      tex.print("\\noindent\\verb|" .. line .."|\\\\")
     end
   end
   for ch in self:iter() do
-    if ch.status == "code" then
+    if ch.status == "code" or ch.status == "doc" then
       print_code(ch)
+    elseif ch.status == "api_doc" then
+      for _, line in ipairs(ch) do
+        line = line:gsub("%%", "")
+        tex.print("\\noindent " ..line .. "\\\\")
+      end
     else
       print_chunk(ch)
     end
+  end
+end
+
+--- 
+-- Get type of content of the tested line
+DocClass.getLineStatus = function(self,line)
+  local status = self.status
+  -- print(status, line)
+  if line:match("^%s*%%%%") then
+    -- api_doc starts with two %%
+    return "api_doc"
+  elseif line:match("^%s*%%") then
+    -- commented lines that follow api_doc start are part
+    -- of api_doc
+    if status == "api_doc" then 
+      return status
+    else
+      return "comment"
+    end
+  elseif line:match("^%s*$") then
+    return "blank"
+  else 
+    return "code"
   end
 end
 
@@ -56,20 +84,18 @@ DocClass.testStatus = function(self,status)
   self.current_chunk = {}
 end
 
+
 DocClass.addLine = function(self, line)
-  local current_chunk = self.current_chunk
+  -- process input lines
   local status = self.status
-  -- remove Unicode BOM
-  if status == "init" then 
-    print("init", line)
-  end
-  local line_status = line:match("^%s*%%") and "doc" or "code"
-  if line_status == "doc" then line = line:gsub("^%s*%%","") end
+  local line_status = self:getLineStatus(line)
+  -- if line_status == "doc" or line_status == "api_doc" then line = line:gsub("^%s*%%","") end
+  -- close current chunk when the status changes
   if status ~= "init" and status ~= line_status then
     self:testStatus(status)
   end
   self.status = line_status
-  table.insert(current_chunk, line)
+  table.insert(self.current_chunk, line)
 end
 
 --- 
