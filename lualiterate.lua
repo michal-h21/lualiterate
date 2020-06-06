@@ -6,6 +6,7 @@ DocClass.__index = DocClass
 local init = function() 
   local self =  setmetatable({},DocClass) 
   self.current_chunk = {}
+  self.status = "init"
   return self
 end
 
@@ -19,13 +20,6 @@ DocClass.iter = function(self)
   end
 end
 
----
--- I need to figure out what this does
-DocClass.testStatus = function(self,status)
-  current_chunk.status = status
-  table.insert(self.chunks, current_chunk)
-  current_chunk = {}
-end
 
 
 ---
@@ -46,6 +40,7 @@ DocClass.listSources = function(self)
     end
   end
   for ch in self:iter() do
+    print("Status", ch.status)
     if ch.status == "code" then
       print_code(ch)
     else
@@ -54,24 +49,45 @@ DocClass.listSources = function(self)
   end
 end
 
+---
+-- I need to figure out what this does
+DocClass.testStatus = function(self,status)
+  local status = status or self.status
+  current_chunk.status = status
+  table.insert(self.chunks, current_chunk)
+  current_chunk = {}
+end
+
 DocClass.addLine = function(self, line)
+  local status = self.status
   local line_status = line:match("^%s*%%") and "doc" or "code"
   if line_status == "doc" then line = line:gsub("^%s*%%","") end
-  -- print(line_status, line)
+  print(status, line_status, line)
   if status ~= "init" and status ~= line_status then
     self:testStatus(status)
   end
-  status = line_status
+  self.status = line_status
   table.insert(current_chunk, line)
 end
 
-function m.load_file(filename)
-  local status = "init"
-  local x = init()
-  for line in io.lines(filename) do
-    x:addLine(line)
+--- 
+-- pass table with lines
+DocClass.parseSource = function(self,lines) 
+  for i=1,#lines do 
+    local line = lines[i]
+    self:addLine(line)
   end
-  x:testStatus(status)
+  -- save the latest chunk
+  self:testStatus()
+end
+
+function m.load_file(filename)
+  local x = init()
+  local lines = {}
+  for line in io.lines(filename) do
+    lines[#lines+1] = line
+  end
+  x:parseSource(lines)
   return x
 end
 
