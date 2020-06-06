@@ -1,0 +1,22 @@
+\documentclass{ltxdoc}
+\usepackage{lualiterate}
+\usepackage{markdown}
+\usepackage{fontspec}
+\usepackage{imakeidx}
+\setmainfont{ETbb}
+\title{The \texttt{lualiterate} package}
+\author{Michal Hoftich}
+\makeindex
+\begin{document}
+\maketitle
+
+\markdownInput[hybrid]{README.md}
+\section{Package code}
+\lualiterateinput{lualiterate.sty}
+\printindex
+\end{document}
+
+
+
+
+
