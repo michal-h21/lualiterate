@@ -26,13 +26,15 @@ local match_pattern = function(str, name, pattern)
   local s,e = str:find(pattern, e) 
   local x = 1
   while s do
-    -- print(name,s,e)
-    t[#t+1] = str:sub(x, s)
-    t[#t+1] = {str = str:sub(s,e), type = name}
+    local matched = str:sub(s,e)
+    print(name,matched,s,e)
+    if s > x then
+      t[#t+1] = str:sub(x, s)
+    end
+    x = e + 1
+    t[#t+1] = {str = matched, type = name}
     s,e = str:find(pattern, e) 
-    x = e
   end
-  x = x or 1
   t[#t+1] = str:sub(x)
   return t
 end
@@ -42,10 +44,16 @@ local function apply_pattern(t, name, pat)
   local new =  {}
   for i = 1, #t do
     local curr = t[i]
+    local x = {}
     if type(curr) == "string" then
-      new[i] = match_pattern(curr, name, pat)
-    else
-      new[i] = apply_pattern(curr, name, pat)
+      print("match", curr)
+      x =  match_pattern(curr, name, pat)
+    elseif type(curr) == "table"  then
+      -- print("apply")
+      x = apply_pattern(curr, name, pat)
+    end
+    for _, n in ipairs(x) do
+      new[#new+1] = n
     end
   end
   return new
@@ -53,7 +61,8 @@ end
 
 local lexer = function(str, patterns)
   local s = {str}
-  for name,pat in pairs(patterns) do
+  for _,x in ipairs(patterns) do
+    local name, pat = x.name,x.pattern
     s = apply_pattern(s, name, pat)
   end
   return s
@@ -62,9 +71,11 @@ end
 
 
 local patterns = {
-  comment = "%%.*$",
-  command = "\\[a-zA-Z%@]+",
-  math = "$.-$"
+  {name = "comment", pattern= "%%.*$"},
+  {name = "begin", pattern = "\\begin{[^%}]+}"},
+  {name="command", pattern = "\\[a-zA-Z%@]+"},
+  {name="math", pattern = "%$[^%$]+%$"},
+  -- {name="rest", pattern = ".*"}
 }
 
 local lines = {}
