@@ -1,16 +1,15 @@
 local m = {}
 
 local DocClass = {}
-local current_chunk = {}
 DocClass.__index = DocClass
 local init = function() 
   local self =  setmetatable({},DocClass) 
   self.current_chunk = {}
   self.status = "init"
+  self.chunks = {}
   return self
 end
 
-DocClass.chunks = {}
 
 DocClass.iter = function(self)
   local i = 0
@@ -36,11 +35,9 @@ DocClass.listSources = function(self)
     tex.print("\n\n\\noindent")
     for _, line in ipairs(ch) do
       tex.print("\\verb|" .. line .."|\\\\")
-      print("\\noindent\\verb|" .. line .."|\\\\")
     end
   end
   for ch in self:iter() do
-    print("Status", ch.status)
     if ch.status == "code" then
       print_code(ch)
     else
@@ -53,16 +50,21 @@ end
 -- I need to figure out what this does
 DocClass.testStatus = function(self,status)
   local status = status or self.status
+  local current_chunk = self.current_chunk 
   current_chunk.status = status
   table.insert(self.chunks, current_chunk)
-  current_chunk = {}
+  self.current_chunk = {}
 end
 
 DocClass.addLine = function(self, line)
+  local current_chunk = self.current_chunk
   local status = self.status
+  -- remove Unicode BOM
+  if status == "init" then 
+    print("init", line)
+  end
   local line_status = line:match("^%s*%%") and "doc" or "code"
   if line_status == "doc" then line = line:gsub("^%s*%%","") end
-  print(status, line_status, line)
   if status ~= "init" and status ~= line_status then
     self:testStatus(status)
   end
