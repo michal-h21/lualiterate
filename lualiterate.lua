@@ -1,5 +1,7 @@
 local m = {}
 
+local object_cache = {}
+
 local DocClass = {}
 DocClass.__index = DocClass
 local init = function() 
@@ -43,8 +45,9 @@ DocClass.listSources = function(self)
     elseif ch.status == "api_doc" then
       for _, line in ipairs(ch) do
         line = line:gsub("%%", "")
-        tex.print("\\noindent " ..line .. "\\\\")
+        tex.print(line)
       end
+      tex.print("")
     else
       print_chunk(ch)
     end
@@ -109,13 +112,19 @@ DocClass.parseSource = function(self,lines)
   self:testStatus()
 end
 
+---
+-- Parse the literate LaTeX source
 function m.load_file(filename)
+  -- enable reusing of the parsed content
+  local cached = object_cache[filename]
+  if cached then return cached end
   local x = init()
   local lines = {}
   for line in io.lines(filename) do
     lines[#lines+1] = line
   end
   x:parseSource(lines)
+  object_cache[filename] = x
   return x
 end
 
