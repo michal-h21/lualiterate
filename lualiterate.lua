@@ -44,7 +44,6 @@ DocClass.listSources = function(self)
       print_code(ch)
     elseif ch.status == "api_doc" then
       for _, line in ipairs(ch) do
-        line = line:gsub("%%", "")
         tex.print(line)
       end
       tex.print("")
@@ -53,6 +52,8 @@ DocClass.listSources = function(self)
     end
   end
 end
+
+
 
 --- 
 -- Get type of content of the tested line
@@ -68,9 +69,11 @@ DocClass.getLineStatus = function(self,line)
     if status == "api_doc" then 
       return status
     else
+      -- they are normal comments otherwise
       return "comment"
     end
   elseif line:match("^%s*$") then
+    -- blank line (paragraph break)
     return "blank"
   else 
     return "code"
@@ -78,7 +81,7 @@ DocClass.getLineStatus = function(self,line)
 end
 
 ---
--- I need to figure out what this does
+-- this function closes the current chunk and initiates a new one
 DocClass.testStatus = function(self,status)
   local status = status or self.status
   local current_chunk = self.current_chunk 
@@ -101,8 +104,31 @@ DocClass.addLine = function(self, line)
   table.insert(self.current_chunk, line)
 end
 
+DocClass.parseTags = function(self)
+  for i, chunk in ipairs(self.chunks) do
+    if chunk.status == "api_doc" then
+      -- replace the old chunk with a new one, with tags removed
+      local newchunk = {status = "api_doc", tags = {}}
+      for _, line in ipairs(chunk) do
+        -- remove "%" characters from the line start
+        local line = line:gsub("^%s*%%*", "")
+        -- match tags, they start with @<tagname>
+        local tag, params = line:match("%s*@(%w+)%s*(.*)")
+        if tag then
+          table.insert(newchunk.tags, {tag = tag, params = params})
+        else
+          -- copy lines that are not tags as input text
+          -- it can be description of the command etc.
+          table.insert(newchunk, line)
+        end
+      end
+      self.chunks[i] = newchunk
+    end
+  end
+end
 --- 
--- pass table with lines
+-- parse table containing LaTeX source
+-- individual lines are table elements
 DocClass.parseSource = function(self,lines) 
   for i=1,#lines do 
     local line = lines[i]
@@ -110,6 +136,7 @@ DocClass.parseSource = function(self,lines)
   end
   -- save the latest chunk
   self:testStatus()
+  self:parseTags()
 end
 
 ---
