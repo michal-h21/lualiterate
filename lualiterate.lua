@@ -104,7 +104,13 @@ DocClass.addLine = function(self, line)
   table.insert(self.current_chunk, line)
 end
 
+---
+-- Parse API doc tags
+-- They follow 
+-- supported tags:
+-- @cmd 
 DocClass.parseTags = function(self)
+
   for i, chunk in ipairs(self.chunks) do
     if chunk.status == "api_doc" then
       -- replace the old chunk with a new one, with tags removed
