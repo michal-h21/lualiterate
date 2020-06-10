@@ -106,9 +106,17 @@ end
 
 ---
 -- Parse API doc tags
--- They follow 
 -- supported tags:
--- @cmd 
+-- @package -- package name
+-- @author  -- author name
+-- @option  -- package option
+-- @cmd     -- command name
+-- @marg    -- mandatory argument
+-- @oarg    -- optional argument
+-- @darg    -- argument with custom delimiters
+-- @key     -- keyval option for command
+-- @id      -- id of this api_doc block and the following code block
+-- @type    -- type of this api_doc block and the following code block
 DocClass.parseTags = function(self)
 
   for i, chunk in ipairs(self.chunks) do
