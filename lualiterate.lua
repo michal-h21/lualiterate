@@ -114,6 +114,7 @@ end
 -- @marg    -- mandatory argument
 -- @oarg    -- optional argument
 -- @darg    -- argument with custom delimiters
+-- @varg    -- verbatim argument with custom delimiters
 -- @key     -- keyval option for command
 -- @id      -- id of this api_doc block and the following code block
 -- @type    -- type of this api_doc block and the following code block
